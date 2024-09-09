@@ -160,7 +160,7 @@ static bool set_axes() {
     return true;
 }
 
-void dip_balls() {
+void dip() {
     AddLinearMoveRel_(2, 4, 1, 250, false);
     AddLinearMoveRel_(2, 4, 1, 250, true);
 }
@@ -193,10 +193,10 @@ void move_spotter() {
 
 
     for(int i = 0; i < y_positions.size(); i++) {
-        dip_balls();
+        dip();
         for(int j = 0; j < x_positions.size(); j++) {
             AddLinearMoveRel_(0, xmove_rel, 1, feedrate, i%2==0);
-            dip_balls();
+            dip();
         }
         moveY(-ymove_rel, feedrate);
     }
