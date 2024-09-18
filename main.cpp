@@ -304,7 +304,7 @@ void listen_usb() {
 
 
     while (true) {
-
+        double x_pos, y_pos, z_pos, a_pos, b_pos, c_pos;
         if (ReadFile(hSerial, szBuff, sizeof(szBuff) - 1, &dwBytesRead, nullptr)) {
             if (dwBytesRead > 0) {
                 szBuff[dwBytesRead] = '\0'; // Null-terminierte Zeichenkette
@@ -327,7 +327,7 @@ void listen_usb() {
                     double z_work_height = 1.0;     // Working height
 
                     // Get the current axis positions
-                    double x_pos, y_pos, z_pos, a_pos, b_pos, c_pos;
+
                     GetAxisPosition_(&x_pos, &y_pos, &z_pos, &a_pos, &b_pos, &c_pos);
 
                     std::vector<double> x_positions = {28.595, 37.190, 45.785, 54.380, 62.975, 71.570, 80.165, 88.760, 97.355, 105.950, 114.545, 123.140, 131.735, 140.330, 148.925, 157.520, 166.115, 174.710, 183.305};
@@ -336,10 +336,13 @@ void listen_usb() {
                     double xmove_rel = x_positions[1] - x_positions[0];
                     double ymove_rel = y_positions[1] - y_positions[0];
 
-                    double xpos=0, ypos=0;
+                    SetAxisPosition_(0, 0, 0, 0, 0, 0);
                     for(int i = 0; i < y_positions.size(); i++) {
                         dip();
                         for(int j = 0; j < x_positions.size(); j++) {
+                            AddLinearMoveRel_(0, xmove_rel, 1, feedrate, i%2==0);
+                            dip();
+
                             //Reset condition
                             if (ReadFile(hSerial, szBuff, sizeof(szBuff) - 1, &dwBytesRead, nullptr)) {
                                 if (dwBytesRead > 0) {
@@ -347,9 +350,8 @@ void listen_usb() {
                                     std::cout << szBuff << std::endl;
 
                                     if(szBuff[2] == '1') {
-                                        std::cout << "POOP" << std::endl;
-                                        xpos = xmove_rel*j;
-                                        ypos = -ymove_rel*i;
+                                        GetAxisPosition_(&x_pos, &y_pos, &z_pos, &a_pos, &b_pos, &c_pos);
+                                        std::cout << "stopped at: " << i << " " << j << std::endl << "X: " << x_pos << " Y: " << y_pos << " Z: " << z_pos << std::endl;
                                         goto start;
                                     }
                                 }
@@ -358,18 +360,19 @@ void listen_usb() {
                                 break;
                             }
 
-                            AddLinearMoveRel_(0, xmove_rel, 1, feedrate, i%2==0);
-                            dip();
+
                         }
                         moveY(-ymove_rel, feedrate);
                     }
 
-                    //Move back to start
-                    start:
-                    std::cout << "X: " << xpos << " Y: " << ypos << std::endl;
-                    AddLinearMoveRel_(0, xpos, 1, 10, false);
-                    AddLinearMoveRel_(1, ypos, 1, 10, false);
+
                 }
+                //Move back to start
+                start:
+                //std::cout << "X: " << xpos << " Y: " << ypos << std::endl
+                AddLinearMoveRel_(0, abs(x_pos), 1, 10, false);
+                AddLinearMoveRel_(1, abs(y_pos), 1, 10, false);
+                //AddLinearMoveRel_(2, abs(z_pos), 1, 10, false);
             }
         } else {
             std::cerr << "Fehler beim Lesen vom COM-Port." << std::endl;
@@ -389,8 +392,10 @@ int main() {// load the UC100 DLL
     }
 
     // open the UC100
-    if (!open_device())
+    if (!open_device()) {
+        std::cerr << "Device is opened with another Software, please deactivate and try again!" << std::endl;
         return 1;
+    }
 
     // set your axes
     if (!set_axes())
