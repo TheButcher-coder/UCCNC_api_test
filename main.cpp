@@ -168,6 +168,7 @@ void dip() {
 void moveY(double amount, double rate) {
     AddLinearMoveRel_(1, amount, 1, rate, true);
 }
+/*
 void move_spotter() {
     // Disable motion progress state
     SetMotionProgressState_(false);
@@ -191,16 +192,37 @@ void move_spotter() {
     double xmove_rel = x_positions[1] - x_positions[0];
     double ymove_rel = y_positions[1] - y_positions[0];
 
-
+    double xpos=0, ypos=0;
     for(int i = 0; i < y_positions.size(); i++) {
         dip();
         for(int j = 0; j < x_positions.size(); j++) {
+            //Reset condition
+            if (ReadFile(hSerial, szBuff, sizeof(szBuff) - 1, &dwBytesRead, nullptr)) {
+                if (dwBytesRead > 0) {
+                    szBuff[dwBytesRead] = '\0'; // Null-terminierte Zeichenkette
+                    std::cout << szBuff << std::endl;
+
+                    if(szBuff[2] == '1') {
+                        std::cout << "POOP" << std::endl;
+                        xpos = xmove_rel*j;
+                        ypos = -ymove_rel*i;
+                        break;
+                    }
+                }
+            } else {
+                std::cerr << "Fehler beim Lesen vom COM-Port. Im bewegen dings" << std::endl;
+                break;
+            }
+
             AddLinearMoveRel_(0, xmove_rel, 1, feedrate, i%2==0);
             dip();
         }
         moveY(-ymove_rel, feedrate);
     }
+    AddLinearMoveRel_(0, -xpos, 1, feedrate, false);
+    moveY(ypos, feedrate);
 }
+ */
 
 static void print_controller_info() {
     Stat res_stat;
@@ -290,7 +312,63 @@ void listen_usb() {
 
                 if(szBuff[0] == '1') {
                     std::cout << "POOP" << std::endl;
-                    move_spotter();
+
+                    //move spotter
+// Disable motion progress state
+                    SetMotionProgressState_(false);
+
+                    // Initialize move ID
+                    int move_id = 0;
+
+                    // Define feedrate and Z-axis heights
+                    double feedrate = 500.0;        // Initial feedrate
+                    double z_safe_height = 25.0;    // Safe height for Z axis
+                    double z_move_height = 4.0;     // Height for move position
+                    double z_work_height = 1.0;     // Working height
+
+                    // Get the current axis positions
+                    double x_pos, y_pos, z_pos, a_pos, b_pos, c_pos;
+                    GetAxisPosition_(&x_pos, &y_pos, &z_pos, &a_pos, &b_pos, &c_pos);
+
+                    std::vector<double> x_positions = {28.595, 37.190, 45.785, 54.380, 62.975, 71.570, 80.165, 88.760, 97.355, 105.950, 114.545, 123.140, 131.735, 140.330, 148.925, 157.520, 166.115, 174.710, 183.305};
+                    std::vector<double> y_positions = {-22.017, -32.134, -42.251, -52.368, -62.485, -72.602, -82.719, -92.836, -102.953, -113.070, -123.187, -133.304, -143.421, -153.538, -163.655, -173.772, -183.889, -194.006, -204.123, -214.240, -224.357, -234.474, -244.591, -254.708};
+
+                    double xmove_rel = x_positions[1] - x_positions[0];
+                    double ymove_rel = y_positions[1] - y_positions[0];
+
+                    double xpos=0, ypos=0;
+                    for(int i = 0; i < y_positions.size(); i++) {
+                        dip();
+                        for(int j = 0; j < x_positions.size(); j++) {
+                            //Reset condition
+                            if (ReadFile(hSerial, szBuff, sizeof(szBuff) - 1, &dwBytesRead, nullptr)) {
+                                if (dwBytesRead > 0) {
+                                    szBuff[dwBytesRead] = '\0'; // Null-terminierte Zeichenkette
+                                    std::cout << szBuff << std::endl;
+
+                                    if(szBuff[2] == '1') {
+                                        std::cout << "POOP" << std::endl;
+                                        xpos = xmove_rel*j;
+                                        ypos = -ymove_rel*i;
+                                        goto start;
+                                    }
+                                }
+                            } else {
+                                std::cerr << "Fehler beim Lesen vom COM-Port. Im bewegen dings" << std::endl;
+                                break;
+                            }
+
+                            AddLinearMoveRel_(0, xmove_rel, 1, feedrate, i%2==0);
+                            dip();
+                        }
+                        moveY(-ymove_rel, feedrate);
+                    }
+
+                    //Move back to start
+                    start:
+                    std::cout << "X: " << xpos << " Y: " << ypos << std::endl;
+                    AddLinearMoveRel_(0, xpos, 1, 10, false);
+                    AddLinearMoveRel_(1, ypos, 1, 10, false);
                 }
             }
         } else {
@@ -318,7 +396,8 @@ int main() {// load the UC100 DLL
     if (!set_axes())
         return 1;
 
-    listen_usb();
+    //Home
+    listen_usb();     //WORKS!!!!!
     // print some info
     print_controller_info();
 
