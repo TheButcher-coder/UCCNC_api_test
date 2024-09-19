@@ -305,6 +305,7 @@ void listen_usb() {
 
     while (true) {
         double x_pos, y_pos, z_pos, a_pos, b_pos, c_pos;
+        bool stopsignal=false;
         if (ReadFile(hSerial, szBuff, sizeof(szBuff) - 1, &dwBytesRead, nullptr)) {
             if (dwBytesRead > 0) {
                 szBuff[dwBytesRead] = '\0'; // Null-terminierte Zeichenkette
@@ -350,8 +351,7 @@ void listen_usb() {
                                     std::cout << szBuff << std::endl;
 
                                     if(szBuff[2] == '1') {
-                                        GetAxisPosition_(&x_pos, &y_pos, &z_pos, &a_pos, &b_pos, &c_pos);
-                                        std::cout << "stopped at: " << i << " " << j << std::endl << "X: " << x_pos << " Y: " << y_pos << " Z: " << z_pos << std::endl;
+                                        stopsignal = true;
                                         goto start;
                                     }
                                 }
@@ -370,9 +370,16 @@ void listen_usb() {
                 //Move back to start
                 start:
                 //std::cout << "X: " << xpos << " Y: " << ypos << std::endl
-                AddLinearMoveRel_(0, abs(x_pos), 1, 10, false);
-                AddLinearMoveRel_(1, abs(y_pos), 1, 10, false);
-                //AddLinearMoveRel_(2, abs(z_pos), 1, 10, false);
+
+                if(stopsignal) {
+                    GetAxisPosition_(&x_pos, &y_pos, &z_pos, &a_pos, &b_pos, &c_pos);
+                    std::cout << "currently at: " << std::endl << "X: " << x_pos << " Y: " << y_pos << " Z: " << z_pos
+                              << std::endl;
+                    AddLinearMoveRel_(0, abs(x_pos), 1, 10, false);
+                    AddLinearMoveRel_(1, abs(y_pos), 1, 10, false);
+                    //AddLinearMoveRel_(2, abs(z_pos), 1, 10, false);
+                    stopsignal = false;
+                }
             }
         } else {
             std::cerr << "Fehler beim Lesen vom COM-Port." << std::endl;
