@@ -327,6 +327,7 @@ void listen_usb() {
                     double z_move_height = 4.0;     // Height for move position
                     double z_work_height = 1.0;     // Working height
 
+
                     // Get the current axis positions
 
                     GetAxisPosition_(&x_pos, &y_pos, &z_pos, &a_pos, &b_pos, &c_pos);
