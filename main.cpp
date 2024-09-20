@@ -250,6 +250,13 @@ void home() {
     homeZ();
 }
 
+void print_current_time() {
+    const auto p1 = std::chrono::system_clock::now();
+
+    std::cout << "seconds since epoch: "
+              << std::chrono::duration_cast<std::chrono::seconds>(
+                      p1.time_since_epoch()).count() << '\n';
+}
 void listen_usb() {
     HANDLE hSerial = CreateFile(R"(\\.\COM15)",
                                 GENERIC_READ | GENERIC_WRITE,
@@ -341,6 +348,7 @@ void listen_usb() {
                     SetAxisPosition_(0, 0, 0, 0, 0, 0);
                     for(int i = 0; i < y_positions.size(); i++) {
                         dip();
+                        print_current_time();
                         if (ReadFile(hSerial, szBuff, sizeof(szBuff) - 1, &dwBytesRead, nullptr)) {
                             if (dwBytesRead > 0) {
                                 szBuff[dwBytesRead] = '\0'; // Null-terminierte Zeichenkette
@@ -358,6 +366,7 @@ void listen_usb() {
                         for(int j = 0; j < x_positions.size(); j++) {
                             AddLinearMoveRel_(0, xmove_rel, 1, feedrate, i%2==0);
                             dip();
+                            print_current_time();
 
                             //Reset condition
                             if (ReadFile(hSerial, szBuff, sizeof(szBuff) - 1, &dwBytesRead, nullptr)) {
