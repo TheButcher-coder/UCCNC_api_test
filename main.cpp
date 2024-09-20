@@ -7,6 +7,7 @@
 #include <string>
 #include <chrono>
 #include "source/UC100.h"
+#include "timed_spots.h"
 
 // typedef some UC100 function pointers
 typedef int (__stdcall *AddLinMoveFP)(double, double, double, double, double, double, double, double);
@@ -250,12 +251,14 @@ void home() {
     homeZ();
 }
 
-void print_current_time() {
+int print_current_time() {
     const auto p1 = std::chrono::system_clock::now();
 
-    std::cout << "seconds since epoch: "
-              << std::chrono::duration_cast<std::chrono::seconds>(
-                      p1.time_since_epoch()).count() << '\n';
+    //std::cout << "seconds since epoch: "
+    //          << std::chrono::duration_cast<std::chrono::seconds>(
+    //                  p1.time_since_epoch()).count() << '\n';
+    return std::chrono::duration_cast<std::chrono::seconds>(
+            p1.time_since_epoch()).count();
 }
 void listen_usb() {
     HANDLE hSerial = CreateFile(R"(\\.\COM15)",
@@ -346,9 +349,12 @@ void listen_usb() {
                     double ymove_rel = y_positions[1] - y_positions[0];
 
                     SetAxisPosition_(0, 0, 0, 0, 0, 0);
-                    for(int i = 0; i < y_positions.size(); i++) {
+                    timed_spots ts;
+
+                    for(int i = 0; i < 2; i++) {        //change 2 back to y_positions.size()
                         dip();
-                        print_current_time();
+                        ts.add_spot(print_current_time());
+
                         if (ReadFile(hSerial, szBuff, sizeof(szBuff) - 1, &dwBytesRead, nullptr)) {
                             if (dwBytesRead > 0) {
                                 szBuff[dwBytesRead] = '\0'; // Null-terminierte Zeichenkette
@@ -366,7 +372,7 @@ void listen_usb() {
                         for(int j = 0; j < x_positions.size(); j++) {
                             AddLinearMoveRel_(0, xmove_rel, 1, feedrate, i%2==0);
                             dip();
-                            print_current_time();
+                            ts.add_spot(print_current_time());
 
                             //Reset condition
                             if (ReadFile(hSerial, szBuff, sizeof(szBuff) - 1, &dwBytesRead, nullptr)) {
@@ -383,27 +389,30 @@ void listen_usb() {
                                 std::cerr << "Fehler beim Lesen vom COM-Port. Im bewegen dings" << std::endl;
                                 break;
                             }
-
-
                         }
+
                         moveY(-ymove_rel, feedrate);
                     }
 
+                    //Move back to start
+                    start:
+                    //std::cout << "X: " << xpos << " Y: " << ypos << std::endl
+
+                    //if(stopsignal) {
+                        GetAxisPosition_(&x_pos, &y_pos, &z_pos, &a_pos, &b_pos, &c_pos);
+                        std::cout << "currently at: " << std::endl << "X: " << x_pos << " Y: " << y_pos << " Z: " << z_pos
+                                  << std::endl;
+                        AddLinearMoveRel_(0, abs(x_pos), 1, 10, false);
+                        AddLinearMoveRel_(1, abs(y_pos), 1, 10, false);
+                        //AddLinearMoveRel_(2, abs(z_pos), 1, 10, false);
+                        stopsignal = false;
+                        int ctime = print_current_time();
+                        ts.write_to_file("../testing/" + to_string(ctime) + ".txt");
+                        ts.del();
+                   //}
 
                 }
-                //Move back to start
-                start:
-                //std::cout << "X: " << xpos << " Y: " << ypos << std::endl
 
-                if(stopsignal) {
-                    GetAxisPosition_(&x_pos, &y_pos, &z_pos, &a_pos, &b_pos, &c_pos);
-                    std::cout << "currently at: " << std::endl << "X: " << x_pos << " Y: " << y_pos << " Z: " << z_pos
-                              << std::endl;
-                    AddLinearMoveRel_(0, abs(x_pos), 1, 10, false);
-                    AddLinearMoveRel_(1, abs(y_pos), 1, 10, false);
-                    //AddLinearMoveRel_(2, abs(z_pos), 1, 10, false);
-                    stopsignal = false;
-                }
             }
         } else {
             std::cerr << "Fehler beim Lesen vom COM-Port." << std::endl;
