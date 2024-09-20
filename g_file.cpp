@@ -4,7 +4,7 @@
 
 #include "g_file.h"
 
-
+using namespace gpr;
 using namespace std;
 
 g_file::g_file(string inp, string out) {
@@ -33,5 +33,6 @@ void g_file::set_koord(point &in, int line) {
 }
 
 void g_file::parse_file() {
-
+    gcode_program p = parse_gcode(infile);
+    cout << p << endl;
 }

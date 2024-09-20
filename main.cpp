@@ -8,6 +8,7 @@
 #include <chrono>
 #include "source/UC100.h"
 #include "timed_spots.h"
+#include "g_file.h"
 
 // typedef some UC100 function pointers
 typedef int (__stdcall *AddLinMoveFP)(double, double, double, double, double, double, double, double);
@@ -443,7 +444,14 @@ int main() {// load the UC100 DLL
         return 1;
 
     //Home
-    listen_usb();     //WORKS!!!!!
+    //listen_usb();     //WORKS!!!!!
+
+    //  ***TEST OF GCODE PARSER ON 20*25SNAKE***
+    g_file test("/gcodes/20x25snake.txt", "/testing/poop.txt");
+    test.parse_file();
+
+
+
     // print some info
     print_controller_info();
 

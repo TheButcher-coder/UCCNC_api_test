@@ -9,6 +9,8 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include "gcode_parser/gcode_program.h"
+#include "gcode_parser/parser.h"
 
 
 using namespace std;
