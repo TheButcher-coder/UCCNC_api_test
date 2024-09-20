@@ -341,6 +341,20 @@ void listen_usb() {
                     SetAxisPosition_(0, 0, 0, 0, 0, 0);
                     for(int i = 0; i < y_positions.size(); i++) {
                         dip();
+                        if (ReadFile(hSerial, szBuff, sizeof(szBuff) - 1, &dwBytesRead, nullptr)) {
+                            if (dwBytesRead > 0) {
+                                szBuff[dwBytesRead] = '\0'; // Null-terminierte Zeichenkette
+                                std::cout << szBuff << std::endl;
+
+                                if(szBuff[2] == '1') {
+                                    stopsignal = true;
+                                    goto start;
+                                }
+                            }
+                        } else {
+                            std::cerr << "Fehler beim Lesen vom COM-Port. Im bewegen dings" << std::endl;
+                            break;
+                        }
                         for(int j = 0; j < x_positions.size(); j++) {
                             AddLinearMoveRel_(0, xmove_rel, 1, feedrate, i%2==0);
                             dip();
