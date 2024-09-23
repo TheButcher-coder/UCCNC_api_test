@@ -432,10 +432,23 @@ void exec_gfile(g_file in, double feed) {
 
     for(int i = 0; i < in.get_size()-1; i++) {
         point temp = in.get_koord(i+1)-in.get_koord(i);
+        temp.print();
         //int AddLinearMoveRel(int Axis,double Step,int StepCount,double Speed,bool Dir); //Adds a relative coordinate linear movement to the motion buffer.
-        if(temp.x != 0) AddLinearMoveRel_(0, temp.x, 1, feed, true);
-        if(temp.y != 0) AddLinearMoveRel_(1, temp.y, 1, feed, true);
-        if(temp.z != 0) AddLinearMoveRel_(2, temp.z, 1, feed, true);
+        if(temp.x != 0){
+            bool dir = true;
+            if(temp.x < 0) dir = !dir;
+            AddLinearMoveRel_(0, abs(temp.x), 1, feed, dir);
+        }
+        if(temp.y != 0){
+            bool dir = true;
+            if(temp.y < 0) dir = !dir;
+            AddLinearMoveRel_(1, abs(temp.y), 1, feed, !dir);
+        }
+        if(temp.z != 0){
+            bool dir = true;
+            if(temp.z < 0) dir = !dir;
+            AddLinearMoveRel_(2, abs(temp.z), 1, feed, dir);
+        }
 
         //AddLinMove_(temp.x, temp.y, temp.z, 0, 0, 0, feed, 0);
     }
@@ -464,7 +477,7 @@ int main() {// load the UC100 DLL
     g_file test("../gcodes/snaek.txt", "testing/poop.txt");
     test.parse_file();
 
-    exec_gfile(test, 500);
+    exec_gfile(test, 100);
 
 
     // print some info
