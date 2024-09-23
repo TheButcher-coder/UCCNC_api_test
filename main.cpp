@@ -6,6 +6,7 @@
 #include <windows.h>
 #include <string>
 #include <chrono>
+#include <thread>
 #include "source/UC100.h"
 #include "timed_spots.h"
 #include "g_file.h"
@@ -261,6 +262,12 @@ int print_current_time() {
     return std::chrono::duration_cast<std::chrono::seconds>(
             p1.time_since_epoch()).count();
 }
+
+void sleep(int millis) {
+    this_thread::sleep_for(chrono::milliseconds(millis));
+
+}
+
 void listen_usb() {
     HANDLE hSerial = CreateFile(R"(\\.\COM15)",
                                 GENERIC_READ | GENERIC_WRITE,
@@ -313,6 +320,8 @@ void listen_usb() {
     std::string port_message;
     DWORD dwBytesRead = 0;
 
+    sleep(1000);
+    this_thread::sleep_for(chrono::milliseconds(1000));
 
     while (true) {
         double x_pos, y_pos, z_pos, a_pos, b_pos, c_pos;
@@ -428,11 +437,14 @@ void listen_usb() {
 
 void exec_gfile(g_file in, double feed) {
     SetMotionProgressState_(false);
-    SetAxisPosition_(0, 0, 0, 0, 0, 0);
 
     for(int i = 0; i < in.get_size()-1; i++) {
-        int x=0, y=0, z=0;      //current positions
+        int x=0, y=0, z=0;      //current positions //Tracj it!
         point temp = in.get_koord(i+1)-in.get_koord(i);
+        if(in.get_koord(i+1).x == 0) temp.x = 0;
+        if(in.get_koord(i+1).y == 0) temp.y = 0;
+        if(in.get_koord(i+1).z == 0) temp.z = 0;
+
         cout << i << endl;
         temp.print();
         //int AddLinearMoveRel(int Axis,double Step,int StepCount,double Speed,bool Dir); //Adds a relative coordinate linear movement to the motion buffer.
@@ -440,16 +452,19 @@ void exec_gfile(g_file in, double feed) {
             bool dir = true;
             if(temp.x < 0) dir = !dir;
             AddLinearMoveRel_(0, abs(temp.x), 1, feed, dir);
+            sleep(1000);
         }
         if(temp.y != 0){
             bool dir = true;
             if(temp.y < 0) dir = !dir;
             AddLinearMoveRel_(1, abs(temp.y), 1, feed, !dir);
+            sleep(1000);
         }
         if(temp.z != 0){
             bool dir = true;
             if(temp.z < 0) dir = !dir;
             AddLinearMoveRel_(2, abs(temp.z), 1, feed, dir);
+            sleep(1000);
         }
 
         //AddLinMove_(temp.x, temp.y, temp.z, 0, 0, 0, feed, 0);
@@ -477,10 +492,11 @@ int main() {
     //listen_usb();     //WORKS!!!!!
 
     //  ***TEST OF GCODE PARSER ON 20*25SNAKE***
-    g_file test("../gcodes/t.txt", "testing/poop.txt");
+    g_file test("../gcodes/snaek.txt", "testing/poop.txt");
     test.parse_file();
+    test.print_koords();
 
-    exec_gfile(test, 100);
+    exec_gfile(test, 50);
 
 
     // print some info
