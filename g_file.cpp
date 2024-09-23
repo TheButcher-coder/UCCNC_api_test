@@ -37,50 +37,56 @@ void g_file::parse_file() {
 
     ifstream t(file);
     string file_contents((std::istreambuf_iterator<char>(t)),
-                              std::istreambuf_iterator<char>());
+                         std::istreambuf_iterator<char>());
 
     gcode_program p = parse_gcode(file_contents);
     cout << "Num of lines: " << p.num_blocks() << endl;
 
-    for(int i = 0; i < p.num_blocks(); i++) {
+    for (int i = 0; i < p.num_blocks(); i++) {
         auto cblock = p.get_block(i);
         int chunksize = cblock.size();
+        point temp;  // Assuming `point` has x, y, z members
 
-        if(cblock.get_chunk(0).get_word() == 'G' && cblock.get_chunk(0).get_address().int_value() == 0) {
-            point temp;
-            for(int j = 1; j < chunksize; j++) {
-                char coord = cblock.get_chunk(j).get_word();
-                double num = cblock.get_chunk(j).get_address().double_value();
+        for (int j = 0; j < chunksize; j++) {
+            auto current_chunk = cblock.get_chunk(j);
+            if (current_chunk.tp() == CHUNK_TYPE_WORD_ADDRESS) {
+                char coord = current_chunk.get_word();
+                addr current_address = current_chunk.get_address();
 
-                switch(coord) {
-                    case 'X':
-                        temp.x = num;
-                        break;
-                    case 'x':
-                        temp.x = num;
-                        break;
-                    case 'Y':
-                        temp.y = num;
-                        break;
-                    case 'y':
-                        temp.y = num;
-                        break;
-                    case 'Z':
-                        temp.z = num;
-                        break;
-                    case 'z':
-                        temp.z = num;
-                        break;
-                    default:
-                        break;
+                // Check the type of the address and handle accordingly
+                if (current_address.tp() == ADDRESS_TYPE_DOUBLE) {
+                    double num = current_address.double_value();  // It's a double value
+                    switch (coord) {
+                        case 'X': case 'x':
+                            temp.x = num;
+                            break;
+                        case 'Y': case 'y':
+                            temp.y = num;
+                            break;
+                        case 'Z': case 'z':
+                            temp.z = num;
+                            break;
+                    }
+                } else if (current_address.tp() == ADDRESS_TYPE_INTEGER) {
+                    int num = current_address.int_value();  // It's an integer value
+                    switch (coord) {
+                        case 'X': case 'x':
+                            temp.x = static_cast<double>(num);  // Convert int to double if necessary
+                            break;
+                        case 'Y': case 'y':
+                            temp.y = static_cast<double>(num);
+                            break;
+                        case 'Z': case 'z':
+                            temp.z = static_cast<double>(num);
+                            break;
+                    }
                 }
-                append_koord(temp);
             }
         }
-        //cblock.print(cout);
+        append_koord(temp);  // Add the parsed point to the coordinates list
     }
+
     cout << "Parsing done!" << endl;
-    //cout << p << endl;
 }
 
 void g_file::print_koords() {

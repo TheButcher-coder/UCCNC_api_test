@@ -431,7 +431,9 @@ void exec_gfile(g_file in, double feed) {
     SetAxisPosition_(0, 0, 0, 0, 0, 0);
 
     for(int i = 0; i < in.get_size()-1; i++) {
+        int x=0, y=0, z=0;      //current positions
         point temp = in.get_koord(i+1)-in.get_koord(i);
+        cout << i << endl;
         temp.print();
         //int AddLinearMoveRel(int Axis,double Step,int StepCount,double Speed,bool Dir); //Adds a relative coordinate linear movement to the motion buffer.
         if(temp.x != 0){
@@ -454,7 +456,8 @@ void exec_gfile(g_file in, double feed) {
     }
 }
 
-int main() {// load the UC100 DLL
+int main() {
+    // load the UC100 DLL
     HINSTANCE hGetProcLib = LoadLibrary(R"(C:\UCCNC\API\DLL\UC100.dll)");
     if (!hGetProcLib) {
         printf("could not load the dynamic library\n");
@@ -474,7 +477,7 @@ int main() {// load the UC100 DLL
     //listen_usb();     //WORKS!!!!!
 
     //  ***TEST OF GCODE PARSER ON 20*25SNAKE***
-    g_file test("../gcodes/snaek.txt", "testing/poop.txt");
+    g_file test("../gcodes/t.txt", "testing/poop.txt");
     test.parse_file();
 
     exec_gfile(test, 100);
