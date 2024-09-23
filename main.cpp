@@ -426,6 +426,21 @@ void listen_usb() {
     CloseHandle(hSerial);
 }
 
+void exec_gfile(g_file in, double feed) {
+    SetMotionProgressState_(false);
+    SetAxisPosition_(0, 0, 0, 0, 0, 0);
+
+    for(int i = 0; i < in.get_size()-1; i++) {
+        point temp = in.get_koord(i+1)-in.get_koord(i);
+        //int AddLinearMoveRel(int Axis,double Step,int StepCount,double Speed,bool Dir); //Adds a relative coordinate linear movement to the motion buffer.
+        if(temp.x != 0) AddLinearMoveRel_(0, temp.x, 1, feed, true);
+        if(temp.y != 0) AddLinearMoveRel_(1, temp.y, 1, feed, true);
+        if(temp.z != 0) AddLinearMoveRel_(2, temp.z, 1, feed, true);
+
+        //AddLinMove_(temp.x, temp.y, temp.z, 0, 0, 0, feed, 0);
+    }
+}
+
 int main() {// load the UC100 DLL
     HINSTANCE hGetProcLib = LoadLibrary(R"(C:\UCCNC\API\DLL\UC100.dll)");
     if (!hGetProcLib) {
@@ -443,13 +458,13 @@ int main() {// load the UC100 DLL
     if (!set_axes())
         return 1;
 
-    //Home
     //listen_usb();     //WORKS!!!!!
 
     //  ***TEST OF GCODE PARSER ON 20*25SNAKE***
-    g_file test("/gcodes/20x25snake.txt", "/testing/poop.txt");
+    g_file test("../gcodes/snaek.txt", "testing/poop.txt");
     test.parse_file();
 
+    exec_gfile(test, 500);
 
 
     // print some info

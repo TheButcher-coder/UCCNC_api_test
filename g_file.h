@@ -16,20 +16,26 @@
 using namespace std;
 
 struct point {
-    int x, y, z;
+    double x, y, z;
 
     point(){
         x = y = z = 0;
     }
-    point(int a, int b, int c) {
+    point(double a, double b, double c) {
         x=a;
         y=b;
         z=c;
+    }
+    void print() {
+        cout << "X" << x << " Y" << y << " Z" <<  z << endl;
     }
     void operator=(point p) {
         x = p.x;
         y = p.y;
         z = p.z;
+    }
+    point operator-(point p) {
+        return {x-p.x, y-p.y, z-p.z};
     }
 };
 class g_file {
@@ -42,8 +48,11 @@ public:
 
     vector<point> get_koord();
     void set_koord(point &in, int line);
+    point get_koord(int i);
+    int get_size();
     void append_koord(point &in);
     void parse_file();
+    void print_koords();
 
     ~g_file()=default;
 };
