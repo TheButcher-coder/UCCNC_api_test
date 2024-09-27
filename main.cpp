@@ -443,9 +443,10 @@ void listen_usb() {
     CloseHandle(hSerial);
 }
 
-void exec_gfile(g_file &in, double feed, double dwell, double rate, string out) {
+void exec_gfile(g_file &in, double feed, double dwell, double rate) {
     SetMotionProgressState_(false);
     sleep(dwell*1000);
+    timed_spots ts;
 
     point current;
     for(int i = 0; i < in.get_size()-1; i++) {
@@ -477,9 +478,82 @@ void exec_gfile(g_file &in, double feed, double dwell, double rate, string out) 
             //sleep(1000);
         }
         dip();
+        ts.add_spot(print_current_time());
         sleep(rate*1000);
 
         //AddLinMove_(temp.x, temp.y, temp.z, 0, 0, 0, feed, 0);
+    }
+    ts.write_to_file("testing/" + to_string(print_current_time()));
+}
+
+void listen_usb_gfile(g_file &in, double feed, double dwell, double rate) {
+    HANDLE hSerial = CreateFile(R"(\\.\COM15)",
+                                GENERIC_READ | GENERIC_WRITE,
+                                0,
+                                0,
+                                OPEN_EXISTING,
+                                FILE_ATTRIBUTE_NORMAL,
+                                0);
+
+    if (hSerial == INVALID_HANDLE_VALUE) {
+        std::cerr << "Fehler beim Öffnen des seriellen Ports." << std::endl;
+        return;
+    }
+
+    // Serielle Verbindung konfigurieren
+    DCB dcbSerialParams = {0};
+    dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
+
+    if (!GetCommState(hSerial, &dcbSerialParams)) {
+        std::cerr << "Fehler beim Abrufen des COM-Status." << std::endl;
+        CloseHandle(hSerial);
+        return;
+    }
+
+    dcbSerialParams.BaudRate = CBR_9600;
+    dcbSerialParams.ByteSize = 8;
+    dcbSerialParams.StopBits = ONESTOPBIT;
+    dcbSerialParams.Parity   = NOPARITY;
+
+    if (!SetCommState(hSerial, &dcbSerialParams)) {
+        std::cerr << "Fehler beim Konfigurieren des COM-Ports." << std::endl;
+        CloseHandle(hSerial);
+        return;
+    }
+
+    // Timeout-Einstellungen
+    COMMTIMEOUTS timeouts = {0};
+    timeouts.ReadIntervalTimeout         = 50;
+    timeouts.ReadTotalTimeoutConstant    = 50;
+    timeouts.ReadTotalTimeoutMultiplier  = 10;
+
+    if (!SetCommTimeouts(hSerial, &timeouts)) {
+        std::cerr << "Fehler beim Setzen der COM-Timeouts." << std::endl;
+        CloseHandle(hSerial);
+        return;
+    }
+
+    // Daten vom seriellen Port lesen und in der Konsole ausgeben
+    char szBuff[1024];
+    std::string port_message;
+    DWORD dwBytesRead = 0;
+
+    while (true) {
+        if (ReadFile(hSerial, szBuff, sizeof(szBuff) - 1, &dwBytesRead, nullptr)) {
+            if (dwBytesRead > 0) {
+                szBuff[dwBytesRead] = '\0'; // Null-terminierte Zeichenkette
+                std::cout << "A" << szBuff << std::endl;
+
+                if (szBuff[0] == '1') {
+                    sleep(dwell*1000);
+                    exec_gfile(in, feed, dwell, rate);
+                }
+            }
+        }
+        else {
+            std::cerr << "Couldn't read Com Port" << std::endl;
+            break;
+        }
     }
 }
 
@@ -492,32 +566,31 @@ int main(int argc, char* argv[]) {
      * ***argv[5]   dest Path of stuff
      */
     // load the UC100 DLL
+    if (!open_device()) {
+        std::cerr << "Device is opened with another Software, please deactivate and try again!" << std::endl;
+        return 1;
+    }
+    // set your axes
+    if (!set_axes())
+        return 1;
+
+
     if(argc == 1) {
-        //init_cmd(R"(C:\UCCNC\API\DLL\UC100.dll)");
-        // open the UC100
-        if (!open_device()) {
-            std::cerr << "Device is opened with another Software, please deactivate and try again!" << std::endl;
-            return 1;
-        }
-
-        // set your axes
-        if (!set_axes())
-            return 1;
-
         //listen_usb();     //WORKS!!!!!
 
         //  ***TEST OF GCODE PARSER ON 20*25SNAKE***
-        g_file test("../gcodes/snaek.txt", "testing/poop.txt");
+        g_file test("C:\\msys64\\home\\Spielen\\Testing\\Code1\\gcodes\\snaek.txt", "testing/poop.txt");
         test.parse_file();
         test.print_koords();
-        char **end;
-        exec_gfile(test, 50, 0, 1, "testing/AHH.txt");
-
-
-        // print some info
+        exec_gfile(test, 50, 0, 1);
         print_controller_info();
     }
     else {
+        g_file file(argv[4], argv[5]);
+        file.parse_file();
+        file.print_koords();
+        exec_gfile(file, 50, stod(argv[2]), stod(argv[1]));
+        print_controller_info();
         //init_cmd(R"(C:\UCCNC\API\DLL\UC100.dll)");
         //do stuff
     }
