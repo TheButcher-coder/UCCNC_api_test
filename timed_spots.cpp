@@ -20,11 +20,15 @@ void timed_spots::write_to_file(std::string dest) {
     of.open(dest);
 
     for(auto num: ts) {
-        of << num << " ";
+        of << num << " " << endl;
     }
     of.close();
 }
 
 void timed_spots::del() {
     ts.clear();
+}
+
+int timed_spots::get_size() {
+    return ts.size();
 }

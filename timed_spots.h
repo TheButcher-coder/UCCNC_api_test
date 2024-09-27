@@ -19,6 +19,7 @@ public:
     int get_spot(int num);
     void write_to_file(string dest);
     void del();
+    int get_size();
     ~timed_spots()=default;
 };
 

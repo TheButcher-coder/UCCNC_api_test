@@ -103,3 +103,28 @@ point g_file::get_koord(int i) {
 int g_file::get_size() {
     return koords_abs.size();
 }
+
+void g_file::set_outfile(std::string of) {
+    outfile = of;
+}
+
+void g_file::print_to_file() {
+    if(outfile.empty()) return;
+    ofstream of(outfile);
+    for(point p: koords_abs) {
+        p.print_clean(of);
+    }
+    of.close();
+}
+
+void g_file::print_tf_ts(timed_spots ts) {
+    if(outfile.empty()) return;
+    ofstream of(outfile);
+    int i=0;
+    for(point p: koords_abs) {
+        p.print_clean(of);
+        of << ts.get_spot(i);
+        i++;
+    }
+    of.close();
+}

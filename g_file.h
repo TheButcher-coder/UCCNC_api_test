@@ -9,6 +9,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include "timed_spots.h"
 #include "gcode_parser/gcode_program.h"
 #include "gcode_parser/parser.h"
 
@@ -28,6 +29,11 @@ struct point {
     }
     void print() {
         cout << "X" << x << " Y" << y << " Z" <<  z << endl;
+    }
+    void print_clean(ofstream &of) {
+        //without XYZ, just numbers
+        // ALWAYS in order XYZ
+        of << x << y << z << endl;
     }
     void operator=(point p) {
         x = p.x;
@@ -53,6 +59,9 @@ public:
     void append_koord(point &in);
     void parse_file();
     void print_koords();
+    void set_outfile(string of);
+    void print_to_file();
+    void print_tf_ts(timed_spots ts);   //prints with timestamps
 
     ~g_file()=default;
 };

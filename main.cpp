@@ -2,7 +2,7 @@
 #include <windows.h>
 #include <iostream>
 #include <vector>
-#include <iostream>
+#include <fstream>
 #include <windows.h>
 #include <string>
 #include <chrono>
@@ -30,8 +30,12 @@ typedef int (*HomeOnFP)(int, double, double, bool);
 //SET SPINDEL SETTOING!!!!
 //SetSpindleSetting(SPSetting *_SPSetting);
 
+
 // get the functions we want and make them global variables
-HINSTANCE hGetProcLib = LoadLibrary(R"(C:\UCCNC\API\DLL\UC100.dll)");
+ifstream path("UCCNC_PATH.txt");
+const char *uccn_path = "C:\\UCCNC\\API\\DLL\\UC100.dll";
+//basic_istream<char> b = getline(path, uccn_path);
+HINSTANCE hGetProcLib = LoadLibrary(uccn_path);
 auto AddLinMove_ = (AddLinMoveFP)GetProcAddress(hGetProcLib, "AddLinearMoveRel");
 auto listDevices_ = (ListDevicesFP)GetProcAddress(hGetProcLib, "ListDevices");
 auto SetEstopSetting_ = (SetEstopSettingFP)GetProcAddress(hGetProcLib, "SetEstopSetting");
@@ -47,7 +51,14 @@ auto GetAxisPosition_ = (GetAxisPositionFP)GetProcAddress(hGetProcLib, "GetAxisP
 auto SetAxisPosition_ = (SetAxisPositionFP) GetProcAddress(hGetProcLib, "SetAxisPosition");
 auto HomeOn_ = (HomeOnFP) GetProcAddress(hGetProcLib, "HomeOn");
 
+
+
 int device_count;
+
+void sleep(int millis) {
+    this_thread::sleep_for(chrono::milliseconds(millis));
+
+}
 
 static bool open_device() {
 
@@ -55,11 +66,11 @@ static bool open_device() {
     // call the DLL function
     device_count = 0;
     int r1 = listDevices_(&device_count);
-    std::cout << "R1: " << r1 << std::endl;
+    //std::cout << "R1: " << r1 << std::endl;
     int r2 = Open_(1);
 
-    if (r1 != 0 || r2 != 0)
-        return false;
+    //if (r1 != 0 || r2 != 0)
+     //   return false;
 
     Stop_();
 
@@ -263,10 +274,7 @@ int print_current_time() {
             p1.time_since_epoch()).count();
 }
 
-void sleep(int millis) {
-    this_thread::sleep_for(chrono::milliseconds(millis));
 
-}
 
 void listen_usb() {
     HANDLE hSerial = CreateFile(R"(\\.\COM15)",
@@ -335,7 +343,7 @@ void listen_usb() {
                     std::cout << "POOP" << std::endl;
 
                     //move spotter
-// Disable motion progress state
+                    // Disable motion progress state
                     SetMotionProgressState_(false);
 
                     // Initialize move ID
@@ -435,15 +443,14 @@ void listen_usb() {
     CloseHandle(hSerial);
 }
 
-void exec_gfile(g_file in, double feed) {
+void exec_gfile(g_file &in, double feed, double dwell, double rate, string out) {
     SetMotionProgressState_(false);
+    sleep(dwell*1000);
 
+    point current;
     for(int i = 0; i < in.get_size()-1; i++) {
-        int x=0, y=0, z=0;      //current positions //Tracj it!
-        point temp = in.get_koord(i+1)-in.get_koord(i);
-        if(in.get_koord(i+1).x == 0) temp.x = 0;
-        if(in.get_koord(i+1).y == 0) temp.y = 0;
-        if(in.get_koord(i+1).z == 0) temp.z = 0;
+
+        point temp = in.get_koord(i+1)-current;
 
         cout << i << endl;
         temp.print();
@@ -452,55 +459,67 @@ void exec_gfile(g_file in, double feed) {
             bool dir = true;
             if(temp.x < 0) dir = !dir;
             AddLinearMoveRel_(0, abs(temp.x), 1, feed, dir);
-            sleep(1000);
+            current.x = in.get_koord(i+1).x;
+            //sleep(1000);
         }
         if(temp.y != 0){
             bool dir = true;
             if(temp.y < 0) dir = !dir;
             AddLinearMoveRel_(1, abs(temp.y), 1, feed, !dir);
-            sleep(1000);
+            current.y = in.get_koord(i+1).y;
+            //(1000);
         }
         if(temp.z != 0){
             bool dir = true;
             if(temp.z < 0) dir = !dir;
             AddLinearMoveRel_(2, abs(temp.z), 1, feed, dir);
-            sleep(1000);
+            current.z = in.get_koord(i+1).z;
+            //sleep(1000);
         }
+        dip();
+        sleep(rate*1000);
 
         //AddLinMove_(temp.x, temp.y, temp.z, 0, 0, 0, feed, 0);
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    /*
+     * ***argv[1]   spot rate
+     * ***argv[2]   Dwell
+     * ***argv[3]   UCCNC Path
+     * ***argv[4]   Gfile path
+     * ***argv[5]   dest Path of stuff
+     */
     // load the UC100 DLL
-    HINSTANCE hGetProcLib = LoadLibrary(R"(C:\UCCNC\API\DLL\UC100.dll)");
-    if (!hGetProcLib) {
-        printf("could not load the dynamic library\n");
-        return 1;
+    if(argc == 1) {
+        //init_cmd(R"(C:\UCCNC\API\DLL\UC100.dll)");
+        // open the UC100
+        if (!open_device()) {
+            std::cerr << "Device is opened with another Software, please deactivate and try again!" << std::endl;
+            return 1;
+        }
+
+        // set your axes
+        if (!set_axes())
+            return 1;
+
+        //listen_usb();     //WORKS!!!!!
+
+        //  ***TEST OF GCODE PARSER ON 20*25SNAKE***
+        g_file test("../gcodes/snaek.txt", "testing/poop.txt");
+        test.parse_file();
+        test.print_koords();
+        char **end;
+        exec_gfile(test, 50, 0, 1, "testing/AHH.txt");
+
+
+        // print some info
+        print_controller_info();
     }
-
-    // open the UC100
-    if (!open_device()) {
-        std::cerr << "Device is opened with another Software, please deactivate and try again!" << std::endl;
-        return 1;
+    else {
+        //init_cmd(R"(C:\UCCNC\API\DLL\UC100.dll)");
+        //do stuff
     }
-
-    // set your axes
-    if (!set_axes())
-        return 1;
-
-    //listen_usb();     //WORKS!!!!!
-
-    //  ***TEST OF GCODE PARSER ON 20*25SNAKE***
-    g_file test("../gcodes/snaek.txt", "testing/poop.txt");
-    test.parse_file();
-    test.print_koords();
-
-    exec_gfile(test, 50);
-
-
-    // print some info
-    print_controller_info();
-
     return 0;
 }
