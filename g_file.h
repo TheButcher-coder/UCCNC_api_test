@@ -9,6 +9,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <cmath>
 #include "timed_spots.h"
 #include "gcode_parser/gcode_program.h"
 #include "gcode_parser/parser.h"
@@ -20,7 +21,7 @@ struct point {
     double x, y, z;
 
     point(){
-        x = y = z = 0;
+        x = y = z = nan("");
     }
     point(double a, double b, double c) {
         x=a;
@@ -40,8 +41,25 @@ struct point {
         y = p.y;
         z = p.z;
     }
+    point operator+(point p) {
+        point temp;
+        if(p.x == nan("")) temp.x=x;
+        else temp.x=x+p.x;
+        if(p.y == nan("")) temp.y=y;
+        else temp.y=y+p.y;
+        if(p.z == nan("")) temp.z=z;
+        else temp.z=z+p.z;
+        return temp;
+    }
     point operator-(point p) {
-        return {x-p.x, y-p.y, z-p.z};
+        point temp;
+        if(p.x == nan("")) temp.x=x;
+        else temp.x=x-p.x;
+        if(p.y == nan("")) temp.y=y;
+        else temp.y=y-p.y;
+        if(p.z == nan("")) temp.z=z;
+        else temp.z=z-p.z;
+        return temp;
     }
 };
 class g_file {

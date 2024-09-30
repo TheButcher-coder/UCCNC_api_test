@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cmath>
 #include <windows.h>
 #include <iostream>
 #include <vector>
@@ -449,34 +450,32 @@ void exec_gfile(g_file &in, double feed, double dwell, double rate) {
     timed_spots ts;
 
     point current;
-    for(int i = 0; i < in.get_size()-1; i++) {
-
-        point temp = in.get_koord(i+1)-current;
+    current.x = current.y = current.z = 0;
+    for(int i = 0; i < in.get_size(); i++) {
+        point temp = in.get_koord(i)-current;
 
         cout << i << endl;
         temp.print();
         //int AddLinearMoveRel(int Axis,double Step,int StepCount,double Speed,bool Dir); //Adds a relative coordinate linear movement to the motion buffer.
-        if(temp.x != 0){
+        if(temp.x != nan("")){
             bool dir = true;
             if(temp.x < 0) dir = !dir;
             AddLinearMoveRel_(0, abs(temp.x), 1, feed, dir);
-            current.x = in.get_koord(i+1).x;
             //sleep(1000);
         }
-        if(temp.y != 0){
+        if(temp.y != nan("")){
             bool dir = true;
             if(temp.y < 0) dir = !dir;
             AddLinearMoveRel_(1, abs(temp.y), 1, feed, !dir);
-            current.y = in.get_koord(i+1).y;
             //(1000);
         }
-        if(temp.z != 0){
+        if(temp.z != nan("")){
             bool dir = true;
             if(temp.z < 0) dir = !dir;
             AddLinearMoveRel_(2, abs(temp.z), 1, feed, dir);
-            current.z = in.get_koord(i+1).z;
             //sleep(1000);
         }
+        current = current + temp;
         dip();
         ts.add_spot(print_current_time());
         sleep(rate*1000);
@@ -579,7 +578,7 @@ int main(int argc, char* argv[]) {
         //listen_usb();     //WORKS!!!!!
 
         //  ***TEST OF GCODE PARSER ON 20*25SNAKE***
-        g_file test("C:\\msys64\\home\\Spielen\\Testing\\Code1\\gcodes\\snaek.txt", "testing/poop.txt");
+        g_file test("../gcodes/snaek.txt", "testing/poop.txt");
         test.parse_file();
         test.print_koords();
         exec_gfile(test, 50, 0, 1);
@@ -589,7 +588,8 @@ int main(int argc, char* argv[]) {
         g_file file(argv[4], argv[5]);
         file.parse_file();
         file.print_koords();
-        exec_gfile(file, 50, stod(argv[2]), stod(argv[1]));
+        listen_usb_gfile(file, 50, stod(argv[2]), stod(argv[1]));
+        //exec_gfile(file, 50, stod(argv[2]), stod(argv[1]));
         print_controller_info();
         //init_cmd(R"(C:\UCCNC\API\DLL\UC100.dll)");
         //do stuff
