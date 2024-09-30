@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <optional>
 #include "timed_spots.h"
 #include "gcode_parser/gcode_program.h"
 #include "gcode_parser/parser.h"
@@ -43,22 +44,17 @@ struct point {
     }
     point operator+(point p) {
         point temp;
-        if(p.x == nan("")) temp.x=x;
-        else temp.x=x+p.x;
-        if(p.y == nan("")) temp.y=y;
-        else temp.y=y+p.y;
-        if(p.z == nan("")) temp.z=z;
-        else temp.z=z+p.z;
+        temp.x = isnan(p.x) ? x : x + p.x;
+        temp.y = isnan(p.y) ? y : y + p.y;
+        temp.z = isnan(p.z) ? z : z + p.z;
         return temp;
     }
+
     point operator-(point p) {
         point temp;
-        if(p.x == nan("")) temp.x=x;
-        else temp.x=x-p.x;
-        if(p.y == nan("")) temp.y=y;
-        else temp.y=y-p.y;
-        if(p.z == nan("")) temp.z=z;
-        else temp.z=z-p.z;
+        temp.x = isnan(p.x) ? x : x - p.x;
+        temp.y = isnan(p.y) ? y : y - p.y;
+        temp.z = isnan(p.z) ? z : z - p.z;
         return temp;
     }
 };

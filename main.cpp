@@ -457,21 +457,24 @@ void exec_gfile(g_file &in, double feed, double dwell, double rate) {
         cout << i << endl;
         temp.print();
         //int AddLinearMoveRel(int Axis,double Step,int StepCount,double Speed,bool Dir); //Adds a relative coordinate linear movement to the motion buffer.
-        if(temp.x != nan("")){
+        if(!isnan(temp.x)){
             bool dir = true;
             if(temp.x < 0) dir = !dir;
+            cout << "Moving X: " << temp.x << endl;
             AddLinearMoveRel_(0, abs(temp.x), 1, feed, dir);
             //sleep(1000);
         }
-        if(temp.y != nan("")){
+        if(!isnan(temp.y)){
             bool dir = true;
             if(temp.y < 0) dir = !dir;
+            cout << "Moving Y: " << temp.y << endl;
             AddLinearMoveRel_(1, abs(temp.y), 1, feed, !dir);
             //(1000);
         }
-        if(temp.z != nan("")){
+        if(!isnan(temp.z)){
             bool dir = true;
             if(temp.z < 0) dir = !dir;
+            cout << "Moving Z: " << temp.z << endl;
             AddLinearMoveRel_(2, abs(temp.z), 1, feed, dir);
             //sleep(1000);
         }
