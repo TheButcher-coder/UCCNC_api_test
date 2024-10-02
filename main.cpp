@@ -457,6 +457,7 @@ void exec_gfile(g_file &in, double feed, double dwell, double rate) {
         cout << i << endl;
         temp.print();
         //int AddLinearMoveRel(int Axis,double Step,int StepCount,double Speed,bool Dir); //Adds a relative coordinate linear movement to the motion buffer.
+        //if(in.get_koord(i).x == 0 & in.get_koord(i).y == 0 && in.get_koord(i).z == 0) feed *= 0.1;
         if(!isnan(temp.x)){
             bool dir = true;
             if(temp.x < 0) dir = !dir;
@@ -591,7 +592,7 @@ int main(int argc, char* argv[]) {
         g_file file(argv[4], argv[5]);
         file.parse_file();
         file.print_koords();
-        listen_usb_gfile(file, 50, stod(argv[2]), stod(argv[1]));
+        listen_usb_gfile(file, 10, stod(argv[2]), stod(argv[1]));
         //exec_gfile(file, 50, stod(argv[2]), stod(argv[1]));
         print_controller_info();
         //init_cmd(R"(C:\UCCNC\API\DLL\UC100.dll)");
