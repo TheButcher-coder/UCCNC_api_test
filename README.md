@@ -1,4 +1,4 @@
-##UCCNC API Controller to sync an HPLC to a stepcraft D420 with UC100 Controller
+# UCCNC API Controller to sync an HPLC to a stepcraft D420 with UC100 Controller
 
 
 Steps to use it:
