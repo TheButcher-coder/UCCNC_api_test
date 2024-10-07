@@ -1,4 +1,6 @@
-#UCCNC API Controller to sync an HPLC to a stepcraft D420 with UC100 Controller
+##UCCNC API Controller to sync an HPLC to a stepcraft D420 with UC100 Controller
+
+
 Steps to use it:
 
 (UCCNC has to be installed in the Path c:\UCCNC else it wont work this way)
