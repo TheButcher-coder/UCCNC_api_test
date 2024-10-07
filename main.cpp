@@ -489,10 +489,9 @@ void exec_gfile(g_file &in, double feed, double dwell, double rate) {
 
         //AddLinMove_(temp.x, temp.y, temp.z, 0, 0, 0, feed, 0);
     }
-    string paath = "E:/Desktop/Arbeit/gesamt/testing/spots/" + to_string(print_current_time()) + ".txt";
+    string paath = in.get_of() + "/" + to_string(print_current_time()) + ".txt";
     cout << "PATH: " << paath << endl;
     ts.write_to_file(paath);
-
 }
 
 void listen_usb_gfile(g_file &in, double feed, double dwell, double rate, int coom) {
