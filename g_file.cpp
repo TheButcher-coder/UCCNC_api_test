@@ -128,3 +128,7 @@ void g_file::print_tf_ts(timed_spots ts) {
     }
     of.close();
 }
+
+string g_file::get_of() {
+    return outfile;
+}

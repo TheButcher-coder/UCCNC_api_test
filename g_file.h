@@ -67,6 +67,7 @@ public:
     g_file();
 
     vector<point> get_koord();
+    string get_of();
     void set_koord(point &in, int line);
     point get_koord(int i);
     int get_size();

@@ -271,12 +271,12 @@ int print_current_time() {
     //std::cout << "seconds since epoch: "
     //          << std::chrono::duration_cast<std::chrono::seconds>(
     //                  p1.time_since_epoch()).count() << '\n';
-    return std::chrono::duration_cast<std::chrono::seconds>(
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
             p1.time_since_epoch()).count();
 }
 
 
-
+/*
 void listen_usb() {
     HANDLE hSerial = CreateFile(R"(\\.\COM15)",
                                 GENERIC_READ | GENERIC_WRITE,
@@ -443,13 +443,16 @@ void listen_usb() {
     // Serielle Verbindung schließen
     CloseHandle(hSerial);
 }
+ */
 
 void exec_gfile(g_file &in, double feed, double dwell, double rate) {
     SetMotionProgressState_(false);
     sleep(dwell*1000);
     timed_spots ts;
-
     point current;
+    int numlin = in.get_size();
+    int starting_time = print_current_time();
+
     current.x = current.y = current.z = 0;
     for(int i = 0; i < in.get_size(); i++) {
         point temp = in.get_koord(i)-current;
@@ -480,17 +483,21 @@ void exec_gfile(g_file &in, double feed, double dwell, double rate) {
             //sleep(1000);
         }
         current = current + temp;
-        dip();
-        ts.add_spot(print_current_time());
+        if(i != numlin-1) dip();
+        ts.add_spot(print_current_time()-starting_time);
         sleep(rate*1000);
 
         //AddLinMove_(temp.x, temp.y, temp.z, 0, 0, 0, feed, 0);
     }
-    ts.write_to_file("testing/" + to_string(print_current_time()));
+    string paath = "E:/Desktop/Arbeit/gesamt/testing/spots/" + to_string(print_current_time()) + ".txt";
+    cout << "PATH: " << paath << endl;
+    ts.write_to_file(paath);
+
 }
 
-void listen_usb_gfile(g_file &in, double feed, double dwell, double rate) {
-    HANDLE hSerial = CreateFile(R"(\\.\COM15)",
+void listen_usb_gfile(g_file &in, double feed, double dwell, double rate, int coom) {
+    string coomport = R"(\\.\COM)" + to_string(coom);
+    HANDLE hSerial = CreateFile(coomport.c_str(),
                                 GENERIC_READ | GENERIC_WRITE,
                                 0,
                                 0,
@@ -545,7 +552,7 @@ void listen_usb_gfile(g_file &in, double feed, double dwell, double rate) {
         if (ReadFile(hSerial, szBuff, sizeof(szBuff) - 1, &dwBytesRead, nullptr)) {
             if (dwBytesRead > 0) {
                 szBuff[dwBytesRead] = '\0'; // Null-terminierte Zeichenkette
-                std::cout << "A" << szBuff << std::endl;
+                //std::cout << "A" << szBuff << std::endl;
 
                 if (szBuff[0] == '1') {
                     sleep(dwell*1000);
@@ -555,9 +562,10 @@ void listen_usb_gfile(g_file &in, double feed, double dwell, double rate) {
         }
         else {
             std::cerr << "Couldn't read Com Port" << std::endl;
-            break;
+            //break;
         }
     }
+    sleep(20);
 }
 
 int main(int argc, char* argv[]) {
@@ -567,6 +575,7 @@ int main(int argc, char* argv[]) {
      * ***argv[3]   UCCNC Path
      * ***argv[4]   Gfile path
      * ***argv[5]   dest Path of stuff
+     * ***argv[6]   COM port
      */
     // load the UC100 DLL
     if (!open_device()) {
@@ -582,17 +591,19 @@ int main(int argc, char* argv[]) {
         //listen_usb();     //WORKS!!!!!
 
         //  ***TEST OF GCODE PARSER ON 20*25SNAKE***
-        g_file test("../gcodes/snaek.txt", "testing/poop.txt");
+        g_file test("../gcodes/snaek.txt", "../testing/poop.txt");
+        cout << test.get_of() << endl;
         test.parse_file();
         test.print_koords();
-        exec_gfile(test, 50, 0, 1);
+        listen_usb_gfile(test, 10, 0, 1, 15);
+        //exec_gfile(test, 50, 0, 1);
         print_controller_info();
     }
     else {
         g_file file(argv[4], argv[5]);
         file.parse_file();
         file.print_koords();
-        listen_usb_gfile(file, 10, stod(argv[2]), stod(argv[1]));
+        listen_usb_gfile(file, 10, stod(argv[2]), stod(argv[1]), stoi(argv[6]));
         //exec_gfile(file, 50, stod(argv[2]), stod(argv[1]));
         print_controller_info();
         //init_cmd(R"(C:\UCCNC\API\DLL\UC100.dll)");

@@ -20,6 +20,7 @@ public:
     void write_to_file(string dest);
     void del();
     int get_size();
+    void flush();
     ~timed_spots()=default;
 };
 

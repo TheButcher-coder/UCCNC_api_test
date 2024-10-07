@@ -19,8 +19,10 @@ void timed_spots::write_to_file(std::string dest) {
     ofstream of;
     of.open(dest);
 
+    of << "#times of spots in milliseconds" << endl;
     for(auto num: ts) {
-        of << num << " " << endl;
+        of << num << endl;
+        of.flush();
     }
     of.close();
 }
