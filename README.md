@@ -12,3 +12,4 @@ Steps to use it:
 6. press 'start'
 
 (if the UCCNC install Folder is elsewhere go to main.cpp and change the Path in line 37)
+![schem - page 1](https://github.com/user-attachments/assets/088549bb-6fda-4c80-af8f-43a9773c1b24)
