@@ -24,7 +24,9 @@ void timed_spots::write_to_file(std::string dest) {
         of << num << endl;
         of.flush();
     }
+    of.flush();
     of.close();
+    of.flush();
 }
 
 void timed_spots::del() {

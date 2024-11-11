@@ -231,6 +231,8 @@ void exec_gfile(g_file &in, double feed, double dwell, double rate) {
     int starting_time = print_current_time();
 
     current.x = current.y = current.z = 0;
+
+    string paath = in.get_of() + "/" + to_string(print_current_time()) + ".txt";
     for(int i = 0; i < in.get_size(); i++) {
         point temp = in.get_koord(i)-current;
 
@@ -266,7 +268,7 @@ void exec_gfile(g_file &in, double feed, double dwell, double rate) {
 
         //AddLinMove_(temp.x, temp.y, temp.z, 0, 0, 0, feed, 0);
     }
-    string paath = in.get_of() + "/" + to_string(print_current_time()) + ".txt";
+    //string paath = in.get_of() + "/" + to_string(print_current_time()) + ".txt";
     cout << "PATH: " << paath << endl;
     ts.write_to_file(paath);
 }
@@ -324,7 +326,8 @@ void listen_usb_gfile(g_file &in, double feed, double dwell, double rate, int co
     std::string port_message;
     DWORD dwBytesRead = 0;
 
-    while (true) {
+    bool didrun = false;
+    while (!didrun) {
         if (ReadFile(hSerial, szBuff, sizeof(szBuff) - 1, &dwBytesRead, nullptr)) {
             if (dwBytesRead > 0) {
                 szBuff[dwBytesRead] = '\0'; // Null-terminierte Zeichenkette
@@ -333,12 +336,13 @@ void listen_usb_gfile(g_file &in, double feed, double dwell, double rate, int co
                 if (szBuff[0] == '1') {
                     sleep(dwell*1000);
                     exec_gfile(in, feed, dwell, rate);
+                    didrun = true;
                 }
             }
         }
         else {
             std::cerr << "Couldn't read Com Port" << std::endl;
-            //break;
+            return;
         }
     }
     sleep(20);
@@ -367,7 +371,7 @@ int main(int argc, char* argv[]) {
         //listen_usb();     //WORKS!!!!!
 
         //  ***TEST OF GCODE PARSER ON 20*25SNAKE***
-        g_file test("../gcodes/snaek.txt", "../testing/poop.txt");
+        g_file test("../gcodes/snaek.txt", "../testing");
         cout << test.get_of() << endl;
         test.parse_file();
         test.print_koords();
